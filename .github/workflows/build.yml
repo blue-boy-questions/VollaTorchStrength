@@ -50,7 +50,7 @@ jobs:
           set -e
           "$GRADLE_BIN" wrapper --gradle-version "$GRADLE_VERSION"
           chmod +x gradlew
-          ./gradlew :app:assembleRelease --stacktrace
+          ./gradlew :app:assembleDebug --stacktrace
 
       - name: Collect artifacts
         run: |
