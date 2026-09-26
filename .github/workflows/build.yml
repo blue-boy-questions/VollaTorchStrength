@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      GRADLE_VERSION: "8.7"
     steps:
       - uses: actions/checkout@v4
 
@@ -25,7 +26,6 @@ jobs:
           export ANDROID_HOME="$ANDROID_SDK_ROOT"
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           SDKMGR=$(ls "$ANDROID_SDK_ROOT"/cmdline-tools/*/bin/sdkmanager | head -1)
-          echo "sdkmanager: $SDKMGR"
           yes | "$SDKMGR" --licenses >/dev/null 2>&1 || true
           "$SDKMGR" "platforms;android-34" "build-tools;34.0.0" "platform-tools" "ndk;26.1.10909125" >/dev/null
           echo "ANDROID_NDK=$ANDROID_SDK_ROOT/ndk/26.1.10909125" >> $GITHUB_ENV
@@ -38,13 +38,19 @@ jobs:
           file vollatorchd
           cp vollatorchd ksu-module/vollatorchd
 
-      - name: Generate gradle wrapper
+      - name: Fetch Gradle ${{ env.GRADLE_VERSION }} (AGP-compatible)
         run: |
-          gradle wrapper --gradle-version 8.5
-          chmod +x gradlew
+          set -e
+          wget -q "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
+          unzip -q "gradle-${GRADLE_VERSION}-bin.zip"
+          echo "GRADLE_BIN=$PWD/gradle-${GRADLE_VERSION}/bin/gradle" >> $GITHUB_ENV
 
-      - name: Build Xposed APK
-        run: ./gradlew :app:assembleRelease --stacktrace
+      - name: Generate wrapper + build APK
+        run: |
+          set -e
+          "$GRADLE_BIN" wrapper --gradle-version "$GRADLE_VERSION"
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease --stacktrace
 
       - name: Collect artifacts
         run: |
