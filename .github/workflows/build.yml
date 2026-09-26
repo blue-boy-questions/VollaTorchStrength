@@ -8,55 +8,49 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install NDK
+      - name: Prepare SDK (use preinstalled) + NDK
         run: |
-          yes | sdkmanager "ndk;26.1.10909125" >/dev/null || sdkmanager "ndk;26.1.10909125"
+          set -e
+          export ANDROID_HOME="$ANDROID_SDK_ROOT"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          SDKMGR=$(ls "$ANDROID_SDK_ROOT"/cmdline-tools/*/bin/sdkmanager | head -1)
+          echo "sdkmanager: $SDKMGR"
+          yes | "$SDKMGR" --licenses >/dev/null 2>&1 || true
+          "$SDKMGR" "platforms;android-34" "build-tools;34.0.0" "platform-tools" "ndk;26.1.10909125" >/dev/null
           echo "ANDROID_NDK=$ANDROID_SDK_ROOT/ndk/26.1.10909125" >> $GITHUB_ENV
 
       - name: Build root daemon (aarch64)
         run: |
-          NDK="$ANDROID_NDK"
-          CC="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android33-clang"
-          echo "Using $CC"
-          "$CC" -O2 -Wall -static-libgcc -o vollatorchd daemon/vollatorchd.c
+          set -e
+          CC="$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android33-clang"
+          "$CC" -O2 -Wall -o vollatorchd daemon/vollatorchd.c
           file vollatorchd
-          mkdir -p ksu-module
           cp vollatorchd ksu-module/vollatorchd
 
-      - name: Grant gradlew (generate wrapper if missing)
+      - name: Generate gradle wrapper
         run: |
-          if [ ! -f gradlew ]; then
-            gradle wrapper --gradle-version 8.5 || true
-          fi
-          chmod +x gradlew || true
+          gradle wrapper --gradle-version 8.5
+          chmod +x gradlew
 
       - name: Build Xposed APK
-        run: |
-          ./gradlew :app:assembleRelease --stacktrace || gradle :app:assembleRelease --stacktrace
-          find app/build/outputs -name '*.apk' -print
+        run: ./gradlew :app:assembleRelease --stacktrace
 
-      - name: Stage APK into artifacts
+      - name: Collect artifacts
         run: |
           mkdir -p out
           find app/build/outputs -name '*.apk' -exec cp {} out/VollaTorchStrength.apk \;
-
-      - name: Package KernelSU daemon module
-        run: |
-          cd ksu-module
-          zip -r9 ../out/VollaTorchStrength-daemon.zip . -x '*.DS_Store'
-          cd ..
+          cd ksu-module && zip -r9 ../out/VollaTorchStrength-daemon.zip . -x '*.DS_Store' && cd ..
           ls -la out
 
       - name: Upload artifacts
