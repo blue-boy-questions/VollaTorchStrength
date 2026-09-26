@@ -1,0 +1,38 @@
+#MAGISK
+# update-binary shim so the zip installs under both KernelSU and Magisk.
+umask 022
+OUTFD=$2
+ZIPFILE=$3
+mount /data 2>/dev/null
+
+# locate util_functions from Magisk/KernelSU
+for p in /data/adb/magisk /data/adb/ksu /data/adb/ksud; do :; done
+
+ui_print() { echo "$1"; }
+
+require_new_magisk() {
+  ui_print "*******************************"
+  ui_print " Please install KernelSU/Magisk"
+  ui_print "*******************************"
+  exit 1
+}
+
+# Standard Magisk module install flow
+. /data/adb/magisk/util_functions.sh 2>/dev/null || \
+. /data/adb/ksu/util_functions.sh 2>/dev/null || true
+
+if type install_module >/dev/null 2>&1; then
+  install_module
+  exit 0
+fi
+
+# Minimal fallback: unzip into module dir
+MODID=vollatorchd
+MODPATH=/data/adb/modules_update/$MODID
+rm -rf "$MODPATH"
+mkdir -p "$MODPATH"
+unzip -o "$ZIPFILE" -x 'META-INF/*' -d "$MODPATH" >/dev/null 2>&1
+if [ -f "$MODPATH/customize.sh" ]; then
+  . "$MODPATH/customize.sh"
+fi
+exit 0

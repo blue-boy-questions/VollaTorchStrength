@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.blueboy.vollatorch">
+
+    <application
+        android:label="Volla Torch Strength"
+        android:icon="@android:drawable/ic_menu_view"
+        android:allowBackup="false">
+
+        <!-- LSPosed / Xposed module markers -->
+        <meta-data
+            android:name="xposedmodule"
+            android:value="true" />
+        <meta-data
+            android:name="xposeddescription"
+            android:value="Restores torch brightness (31 steps) on the Volla Quintus (algiz): fakes FLASH_INFO_STRENGTH_MAXIMUM_LEVEL and writes the level to the flash sysfs via a root daemon. Needs the companion KernelSU module." />
+        <meta-data
+            android:name="xposedminversion"
+            android:value="93" />
+        <meta-data
+            android:name="xposedscope"
+            android:resource="@array/xposed_scope" />
+    </application>
+</manifest>

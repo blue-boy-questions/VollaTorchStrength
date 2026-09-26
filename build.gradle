@@ -1,0 +1,19 @@
+// Top-level build file
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.4'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        // Xposed API is published on the jitpack / xposed maven; use the api88 mirror.
+        maven { url 'https://api.xposed.info/' }
+    }
+}

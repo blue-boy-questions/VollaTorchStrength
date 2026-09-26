@@ -1,0 +1,66 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK
+        run: |
+          yes | sdkmanager "ndk;26.1.10909125" >/dev/null || sdkmanager "ndk;26.1.10909125"
+          echo "ANDROID_NDK=$ANDROID_SDK_ROOT/ndk/26.1.10909125" >> $GITHUB_ENV
+
+      - name: Build root daemon (aarch64)
+        run: |
+          NDK="$ANDROID_NDK"
+          CC="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android33-clang"
+          echo "Using $CC"
+          "$CC" -O2 -Wall -static-libgcc -o vollatorchd daemon/vollatorchd.c
+          file vollatorchd
+          mkdir -p ksu-module
+          cp vollatorchd ksu-module/vollatorchd
+
+      - name: Grant gradlew (generate wrapper if missing)
+        run: |
+          if [ ! -f gradlew ]; then
+            gradle wrapper --gradle-version 8.5 || true
+          fi
+          chmod +x gradlew || true
+
+      - name: Build Xposed APK
+        run: |
+          ./gradlew :app:assembleRelease --stacktrace || gradle :app:assembleRelease --stacktrace
+          find app/build/outputs -name '*.apk' -print
+
+      - name: Stage APK into artifacts
+        run: |
+          mkdir -p out
+          find app/build/outputs -name '*.apk' -exec cp {} out/VollaTorchStrength.apk \;
+
+      - name: Package KernelSU daemon module
+        run: |
+          cd ksu-module
+          zip -r9 ../out/VollaTorchStrength-daemon.zip . -x '*.DS_Store'
+          cd ..
+          ls -la out
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: VollaTorchStrength
+          path: out/*

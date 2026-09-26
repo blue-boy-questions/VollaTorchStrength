@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- LSPosed scope: hook the apps/processes that call CameraManager torch APIs.
+         system_server hosts SystemUI's Quick Settings torch tile; FlashDim is the
+         user app; android.* covers the framework. -->
+    <string-array name="xposed_scope">
+        <item>android</item>
+        <item>com.android.systemui</item>
+        <item>com.cyb3rko.flashdim</item>
+    </string-array>
+</resources>

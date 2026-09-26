@@ -1,0 +1,32 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.blueboy.vollatorch'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.blueboy.vollatorch"
+        minSdk 33            // torch strength APIs are API 33+ (Android 13); target A16
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // Xposed API — compileOnly so it is NOT bundled (provided by LSPosed at runtime).
+    compileOnly 'de.robv.android.xposed:api:82'
+}

@@ -1,0 +1,6 @@
+id=vollatorchd
+name=Volla Torch Strength Daemon
+version=v1.0
+versionCode=1
+author=blue-boy-questions
+description=Root helper for the VollaTorchStrength Xposed module. Runs a tiny event-driven socket daemon (vollatorchd) that writes torch brightness (0-31) to both mt6360 flash channels on request. Install this AND the Xposed APK (via LSPosed). algiz only.
